@@ -33,4 +33,9 @@
 *.out
 *.app
 
+# Folders
 build/
+
+# Extra
+.bashrc
+.vscode/
