@@ -9,7 +9,7 @@ import sys
 import os
 
 # Read all time steps
-steps = list(range(0, 101, 10))
+steps = list(range(0, 601, 1))
 data = {}
 
 print("Loading data files...")
@@ -31,51 +31,53 @@ if not data:
 
 # Create animation
 print("\nCreating animation...")
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
+fig, ax1 = plt.subplots(1, 1, figsize=(12, 8))
 
 # Top plot: displacement
 line1, = ax1.plot([], [], 'b-', linewidth=2, label='Displacement')
 ax1.set_xlim(-1, 1)
-ax1.set_ylim(-0.2, 1.2)
+ax1.set_ylim(-0.2, 4.0)
 ax1.set_xlabel('Position x', fontsize=12)
 ax1.set_ylabel('Displacement u(x,t)', fontsize=12)
 ax1.grid(True, alpha=0.3)
 ax1.legend()
 title = ax1.set_title('', fontsize=14, fontweight='bold')
 
-# Bottom plot: all snapshots overlaid
-ax2.set_xlabel('Position x', fontsize=12)
-ax2.set_ylabel('Displacement u(x,t)', fontsize=12)
-ax2.set_xlim(-1, 1)
-ax2.set_ylim(-0.2, 1.2)
-ax2.grid(True, alpha=0.3)
-ax2.set_title('All Time Steps Overlaid', fontsize=12)
-
-# Plot all time steps
-colors = plt.cm.viridis(np.linspace(0, 1, len(data)))
-for i, (step, d) in enumerate(data.items()):
-    time = step * 0.01
-    ax2.plot(d[:, 0], d[:, 1], color=colors[i], alpha=0.6, 
-             linewidth=1, label=f't={time:.1f}' if step % 50 == 0 else '')
-
-ax2.legend(fontsize=10)
 
 plt.tight_layout()
 
+# Prepare frames (sorted) and cache arrays for fast access
+steps_sorted = sorted(data.keys())
+frames_data = [data[s] for s in steps_sorted]
+n_frames = len(frames_data)
+
+# If x coordinates are identical across frames, set them once and only update y
+x0 = frames_data[0][:, 0]
+x_fixed = all(np.allclose(fd[:, 0], x0) for fd in frames_data)
+
+if x_fixed:
+    line1.set_data(x0, frames_data[0][:, 1])
+
 def init():
-    line1.set_data([], [])
-    return line1,
+    if x_fixed:
+        line1.set_ydata(frames_data[0][:, 1])
+    else:
+        line1.set_data([], [])
+    return (line1,)
 
-def animate(frame):
-    step = list(data.keys())[frame]
-    d = data[step]
-    line1.set_data(d[:, 0], d[:, 1])
-    time = step * 0.01
-    title.set_text(f'1D Wave Equation: Step {step}, Time = {time:.2f} s, Energy = 0.576')
-    return line1,
+def animate(i):
+    d = frames_data[i]
+    if x_fixed:
+        line1.set_ydata(d[:, 1])
+    else:
+        line1.set_data(d[:, 0], d[:, 1])
+    time = steps_sorted[i] * 0.01
+    title.set_text(f'1D Wave Equation: Step {steps_sorted[i]}, Time = {time:.2f} s')
+    return (line1,)
 
+# Faster playback: shorter interval and use blitting
 anim = FuncAnimation(fig, animate, init_func=init,
-                    frames=len(data), interval=200, blit=False, repeat=True)
+                     frames=n_frames, interval=50, blit=True, repeat=True)
 
 print("\nDisplaying animation. Close the window when done.")
 print("(The animation will loop continuously)")
@@ -83,8 +85,8 @@ print("(The animation will loop continuously)")
 plt.show()
 
 # Optionally save the animation
-save = input("\nSave animation as GIF? (y/n): ").lower().strip()
-if save == 'y':
-    print("Saving animation (this may take a moment)...")
-    anim.save('wave_animation.gif', writer='pillow', fps=5)
-    print("Saved as wave_animation.gif")
+# save = input("\nSave animation as GIF? (y/n): ").lower().strip()
+# if save == 'y':
+#     print("Saving animation (this may take a moment)...")
+#     anim.save('wave_animation.gif', writer='pillow', fps=5)
+#     print("Saved as wave_animation.gif")

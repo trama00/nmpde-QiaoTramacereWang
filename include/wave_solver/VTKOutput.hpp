@@ -23,7 +23,6 @@ namespace Utilities
          * @param displacement Displacement field vector
          * @param velocity Velocity field vector
          * @param step Current time step number
-         * @param time Current simulation time
          * @param filename_base Base name for output file (default: "solution")
          */
         static void write_vtk(
@@ -31,7 +30,6 @@ namespace Utilities
             const dealii::Vector<double> &displacement,
             const dealii::Vector<double> &velocity,
             unsigned int step,
-            double time,
             const std::string &filename_base = "solution");
         
         /**

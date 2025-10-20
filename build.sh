@@ -22,7 +22,8 @@ cd build
 cmake ..
 
 # Build with parallel compilation
-make -j8
+NPROC=$(nproc)
+make -j$NPROC
 
 echo ""
 echo "Build completed successfully!"

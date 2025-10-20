@@ -284,16 +284,18 @@ namespace WaveEquation
             }
         }
         
+        // Compute the number of time steps to take
+        const unsigned int n_time_steps = static_cast<unsigned int>(std::round(final_time_ / time_step_));
+        
         unsigned int step = 0;
         double time = 0.0;
         
         output_results(step, time);
         
-        // Simple time stepping loop
-        while (time < final_time_)
+        // Time stepping loop - use step counter to avoid floating-point accumulation errors
+        for (step = 1; step <= n_time_steps; ++step)
         {
-            time += time_step_;
-            ++step;
+            time = step * time_step_;
             
             if (step % 10 == 0)
             {
@@ -441,7 +443,7 @@ namespace WaveEquation
         // This allows perfect wave reflection with no energy loss
         
         // Solve for U^n
-        dealii::SolverControl solver_control_u(1000, 1e-8 * system_rhs.l2_norm());
+        dealii::SolverControl solver_control_u(10000, 1e-8 * system_rhs.l2_norm());
         dealii::SolverCG<dealii::Vector<double>> cg_u(solver_control_u);
         cg_u.solve(matrix_u, solution_u_, system_rhs, dealii::PreconditionIdentity());
         
@@ -468,13 +470,10 @@ namespace WaveEquation
         // This allows perfect wave reflection with no energy loss
         
         // Solve for V^n
-        dealii::SolverControl solver_control_v(1000, 1e-8 * system_rhs.l2_norm());
+        dealii::SolverControl solver_control_v(10000, 1e-8 * system_rhs.l2_norm());
         dealii::SolverCG<dealii::Vector<double>> cg_v(solver_control_v);
         cg_v.solve(matrix_v, solution_v_, system_rhs, dealii::PreconditionIdentity());
         
-        // Update old solutions
-        old_solution_u_ = solution_u_;
-        old_solution_v_ = solution_v_;
     }
 
     template <int dim>
@@ -486,18 +485,17 @@ namespace WaveEquation
             solution_u_,
             solution_v_,
             step,
-            time,
             "solution");
         
         // Also keep the simple text output for 1D testing
-        // if (dim == 1)
-        // {
-        //     Utilities::VTKOutput<dim>::write_text_1d(
-        //         solution_u_,
-        //         step,
-        //         time,
-        //         "output");
-        // }
+        if (dim == 1)
+        {
+            Utilities::VTKOutput<dim>::write_text_1d(
+                solution_u_,
+                step,
+                time,
+                "output");
+        }
         
         if (step % 50 == 0)
         {

@@ -30,18 +30,23 @@ namespace WaveEquation
         virtual double boundary_value(const dealii::Point<dim> &p, double t) const override
         {
             // Homogeneous Dirichlet boundary conditions
+            (void)p;  // Suppress unused parameter warning
+            (void)t;  // Suppress unused parameter warning
             return 0.0;
         }
         
         virtual double source_term(const dealii::Point<dim> &p, double t) const override
         {
             // No external forcing
+            (void)p;  // Suppress unused parameter warning
+            (void)t;  // Suppress unused parameter warning
             return 0.0;
         }
         
         virtual double value(const dealii::Point<dim> &p, const unsigned int component = 0) const override
         {
             // For dealii::Function interface - used for boundary conditions
+            (void)component;  // Suppress unused parameter warning
             return boundary_value(p, this->get_time());
         }
     };

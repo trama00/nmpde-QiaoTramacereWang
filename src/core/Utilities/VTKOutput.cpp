@@ -15,7 +15,6 @@ namespace Utilities
         const dealii::Vector<double> &displacement,
         const dealii::Vector<double> &velocity,
         unsigned int step,
-        double time,
         const std::string &filename_base)
     {
         // VTK output for ParaView visualization

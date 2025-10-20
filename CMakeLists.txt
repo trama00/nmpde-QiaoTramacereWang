@@ -33,3 +33,83 @@ deal_ii_setup_target(test_wave_1d)
 target_compile_options(test_wave_1d PRIVATE 
     $<$<CXX_COMPILER_ID:GNU>:-O2>
 )
+
+# Add manufactured solution test executable
+add_executable(test_mms
+    src/apps/test_mms.cpp
+    src/cg/CGWaveSolver.cpp
+    src/core/Problems/ManufacturedSolution.cpp
+    src/core/Utilities/VTKOutput.cpp
+    src/core/Utilities/ErrorCalculator.cpp
+)
+
+target_include_directories(test_mms PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/wave_solver
+)
+
+deal_ii_setup_target(test_mms)
+
+target_compile_options(test_mms PRIVATE 
+    $<$<CXX_COMPILER_ID:GNU>:-O2>
+)
+
+# Add spatial convergence test executable
+add_executable(test_convergence_space
+    src/apps/test_convergence_space.cpp
+    src/cg/CGWaveSolver.cpp
+    src/core/Problems/ManufacturedSolution.cpp
+    src/core/Utilities/VTKOutput.cpp
+    src/core/Utilities/ErrorCalculator.cpp
+)
+
+target_include_directories(test_convergence_space PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/wave_solver
+)
+
+deal_ii_setup_target(test_convergence_space)
+
+target_compile_options(test_convergence_space PRIVATE 
+    $<$<CXX_COMPILER_ID:GNU>:-O2>
+)
+
+# Add temporal convergence test executable
+add_executable(test_convergence_time
+    src/apps/test_convergence_time.cpp
+    src/cg/CGWaveSolver.cpp
+    src/core/Problems/ManufacturedSolution.cpp
+    src/core/Utilities/VTKOutput.cpp
+    src/core/Utilities/ErrorCalculator.cpp
+)
+
+target_include_directories(test_convergence_time PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/wave_solver
+)
+
+deal_ii_setup_target(test_convergence_time)
+
+target_compile_options(test_convergence_time PRIVATE 
+    $<$<CXX_COMPILER_ID:GNU>:-O2>
+)
+
+# Add space-time convergence test executable
+add_executable(test_convergence_spacetime
+    src/apps/test_convergence_spacetime.cpp
+    src/cg/CGWaveSolver.cpp
+    src/core/Problems/ManufacturedSolution.cpp
+    src/core/Utilities/VTKOutput.cpp
+    src/core/Utilities/ErrorCalculator.cpp
+)
+
+target_include_directories(test_convergence_spacetime PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/wave_solver
+)
+
+deal_ii_setup_target(test_convergence_spacetime)
+
+target_compile_options(test_convergence_spacetime PRIVATE 
+    $<$<CXX_COMPILER_ID:GNU>:-O2>
+)
