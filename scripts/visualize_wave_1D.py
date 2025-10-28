@@ -8,26 +8,58 @@ from matplotlib.animation import FuncAnimation
 import sys
 import os
 
+# Determine the base path for output files
+# Try build directory relative to script location and workspace root
+script_dir = os.path.dirname(os.path.abspath(__file__))
+workspace_root = os.path.dirname(script_dir)
+
+# Check possible locations for build directory
+possible_paths = [
+    os.path.join(workspace_root, 'build'),  # From workspace root
+    os.path.join(script_dir, '..', 'build'),  # Relative to script
+    'build',  # From current directory
+]
+
+BASE_PATH = None
+for path in possible_paths:
+    if os.path.isdir(path):
+        # Check if it contains output files
+        test_file = os.path.join(path, 'output_step_0.txt')
+        if os.path.exists(test_file):
+            BASE_PATH = path
+            break
+
+if BASE_PATH is None:
+    print("Error: Could not find build directory with output files!")
+    print("Searched in:")
+    for path in possible_paths:
+        print(f"  - {os.path.abspath(path)}")
+    sys.exit(1)
+
+print(f"Found output files in: {os.path.abspath(BASE_PATH)}")
+
 # Read all time steps
 steps = list(range(0, 601, 1))
 data = {}
 
 print("Loading data files...")
 for step in steps:
-    filename = f'output_step_{step}.txt'
+    filename = os.path.join(BASE_PATH, f'output_step_{step}.txt')
     if not os.path.exists(filename):
         print(f"Warning: Could not find {filename}")
         continue
     try:
         d = np.loadtxt(filename, comments='#')
         data[step] = d
-        print(f"  Loaded step {step} (t={step*0.01:.2f})")
     except Exception as e:
         print(f"  Error loading {filename}: {e}")
 
 if not data:
-    print("No data files found! Make sure you're in the build directory.")
+    print(f"No data files found in {BASE_PATH}!")
+    print("Make sure you have run the wave solver to generate output files.")
     sys.exit(1)
+
+print(f"Loaded {len(data)} time steps")
 
 # Create animation
 print("\nCreating animation...")
