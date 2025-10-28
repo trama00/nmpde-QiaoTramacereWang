@@ -17,36 +17,30 @@ namespace WaveEquation
             return std::exp(-(x * x) / (2.0 * sigma * sigma));
         }
         
-        virtual double initial_velocity(const dealii::Point<dim> &p) const override
+        virtual double initial_velocity(const dealii::Point<dim> &/*p*/) const override
         {
             // Zero initial velocity for symmetric splitting
             // With u(x,0) = g(x) and v(x,0) = 0, d'Alembert gives:
             // u(x,t) = 1/2[g(x-ct) + g(x+ct)]
             // This creates two waves of equal amplitude moving in opposite directions
-            (void)p;  // Suppress unused parameter warning
             return 0.0;
         }
         
-        virtual double boundary_value(const dealii::Point<dim> &p, double t) const override
+        virtual double boundary_value(const dealii::Point<dim> &/*p*/, double /*t*/) const override
         {
             // Homogeneous Dirichlet boundary conditions
-            (void)p;  // Suppress unused parameter warning
-            (void)t;  // Suppress unused parameter warning
             return 0.0;
         }
         
-        virtual double source_term(const dealii::Point<dim> &p, double t) const override
+        virtual double source_term(const dealii::Point<dim> &/*p*/, double /*t*/) const override
         {
             // No external forcing
-            (void)p;  // Suppress unused parameter warning
-            (void)t;  // Suppress unused parameter warning
             return 0.0;
         }
         
-        virtual double value(const dealii::Point<dim> &p, const unsigned int component = 0) const override
+        virtual double value(const dealii::Point<dim> &p, const unsigned int /*component*/) const override
         {
             // For dealii::Function interface - used for boundary conditions
-            (void)component;  // Suppress unused parameter warning
             return boundary_value(p, this->get_time());
         }
     };

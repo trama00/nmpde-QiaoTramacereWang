@@ -95,17 +95,14 @@ namespace WaveEquation
         }
         
         // Source term: f(x,y,t) = 0 (since our manufactured solution is exact)
-        virtual double source_term(const dealii::Point<2> &p, double t) const override
+        virtual double source_term(const dealii::Point<2> &/*p*/, double /*t*/) const override
         {
-            (void)p;
-            (void)t;
             return 0.0;
         }
         
         // For dealii::Function interface
-        virtual double value(const dealii::Point<2> &p, const unsigned int component = 0) const override
+        virtual double value(const dealii::Point<2> &p, const unsigned int /*component*/) const override
         {
-            (void)component;
             return boundary_value(p, this->get_time());
         }
         

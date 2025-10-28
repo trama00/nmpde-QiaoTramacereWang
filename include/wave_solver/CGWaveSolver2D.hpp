@@ -41,7 +41,6 @@ namespace WaveEquation
         const dealii::DoFHandler<2>& get_dof_handler() const { return dof_handler_; }
         const dealii::Triangulation<2>& get_triangulation() const { return triangulation_; }
         const dealii::FiniteElement<2>& get_fe() const { return fe_; }
-        const dealii::Vector<double>& get_solution() const { return solution_u_; }  // For compatibility
         const dealii::Vector<double>& get_solution_u() const { return solution_u_; }
         const dealii::Vector<double>& get_solution_v() const { return solution_v_; }
         const ProblemBase<2>* get_problem() const { return problem_.get(); }
@@ -103,7 +102,7 @@ namespace WaveEquation
         double time_step_ = 0.01;
         unsigned int output_interval_ = 10;
         double wave_speed_ = 1.0;
-        unsigned int input_pulse_interval_ = 100; // Inject new pulse every 100 time steps
+        unsigned int input_pulse_interval_ = 100; // Inject new pulse every 100 time steps (0 = disabled)
         
     private:
         // Time stepping state

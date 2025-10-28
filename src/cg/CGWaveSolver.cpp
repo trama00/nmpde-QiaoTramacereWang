@@ -209,9 +209,8 @@ namespace WaveEquation
         public:
             PulseDisplacementFunction(const ProblemBase<dim> *prob) : dealii::Function<dim>(), problem(prob) {}
             
-            virtual double value(const dealii::Point<dim> &p, const unsigned int component = 0) const override
+            virtual double value(const dealii::Point<dim> &p, const unsigned int /*component*/) const override
             {
-                (void)component;
                 return problem->initial_displacement(p);
             }
             
@@ -364,9 +363,8 @@ namespace WaveEquation
         public:
             InitialDisplacementFunction(const ProblemBase<dim> *prob) : dealii::Function<dim>(), problem(prob) {}
             
-            virtual double value(const dealii::Point<dim> &p, const unsigned int component = 0) const override
+            virtual double value(const dealii::Point<dim> &p, const unsigned int /*component*/) const override
             {
-                (void)component;
                 return problem->initial_displacement(p);
             }
             
@@ -380,9 +378,8 @@ namespace WaveEquation
         public:
             InitialVelocityFunction(const ProblemBase<dim> *prob) : dealii::Function<dim>(), problem(prob) {}
             
-            virtual double value(const dealii::Point<dim> &p, const unsigned int component = 0) const override
+            virtual double value(const dealii::Point<dim> &p, const unsigned int /*component*/) const override
             {
-                (void)component;
                 return problem->initial_velocity(p);
             }
             
@@ -406,10 +403,8 @@ namespace WaveEquation
     }
 
     template <int dim>
-    void CGWaveSolver<dim>::solve_time_step(double time)
+    void CGWaveSolver<dim>::solve_time_step(double /*time*/)
     {
-        (void)time; // Suppress unused parameter warning
-        
         // Following deal.II step-23 theta scheme
         // Wave equation: u_tt = c² ∇²u
         // Rewritten as: u_t = v, v_t = c² ∇²u

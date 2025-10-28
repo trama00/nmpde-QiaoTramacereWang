@@ -303,9 +303,8 @@ namespace WaveEquation
                 : dealii::Function<dim>(), problem(prob) {}
             
             virtual double value(const dealii::Point<dim> &p, 
-                               const unsigned int component = 0) const override
+                               const unsigned int /*component*/) const override
             {
-                (void)component;
                 return problem->initial_displacement(p);
             }
             
@@ -320,9 +319,8 @@ namespace WaveEquation
                 : dealii::Function<dim>(), problem(prob) {}
             
             virtual double value(const dealii::Point<dim> &p, 
-                               const unsigned int component = 0) const override
+                               const unsigned int /*component*/) const override
             {
-                (void)component;
                 return problem->initial_velocity(p);
             }
             
@@ -358,10 +356,8 @@ namespace WaveEquation
         pcout_ << "  Initial conditions applied successfully!" << std::endl;
     }
 
-    void CGWaveSolver2DParallel::solve_time_step(double time)
+    void CGWaveSolver2DParallel::solve_time_step(double /*time*/)
     {
-        (void)time;  // Unused for now
-        
         // Crank-Nicolson time integration (theta = 0.5)
         // M * u^{n+1} + dt^2 * theta * K * u^{n+1} = 
         //     M * (2*u^n - u^{n-1}) - dt^2 * (1-theta) * K * u^n + dt^2 * theta * K * u^{n-1}

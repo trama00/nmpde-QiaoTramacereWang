@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
             solver.run();
             
             // Get solution vector
-            const auto &u_h = solver.get_solution();
+            const auto &u_h = solver.get_solution_u();  // Get displacement solution
             
             // Compute L2 error at final time (should return to initial condition)
             dealii::MappingFE<2> mapping(solver.get_fe());

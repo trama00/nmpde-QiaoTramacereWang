@@ -5,6 +5,12 @@
 
 namespace WaveEquation
 {
+    /**
+     * @brief Base class for wave equation solvers
+     * 
+     * Defines the interface that all wave solvers must implement.
+     * This enables polymorphic behavior and testing through base pointers.
+     */
     template <int dim>
     class WaveSolverBase
     {
@@ -22,7 +28,7 @@ namespace WaveEquation
         virtual void output_results(unsigned int step, double time) const = 0;
 
     protected:
-        // Simple logging (no MPI for now)
+        // Output stream for logging (accessible to derived classes)
         std::ostream &pcout = std::cout;
     };
 

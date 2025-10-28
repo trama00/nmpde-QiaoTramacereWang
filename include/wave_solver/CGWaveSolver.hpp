@@ -92,7 +92,7 @@ namespace WaveEquation
         double time_step_ = 0.01;
         unsigned int output_interval_ = 10;
         double wave_speed_ = 1.0;  // Wave propagation speed (c in u_tt = c² ∇²u)
-        unsigned int input_pulse_interval_ = 100; // Inject new pulse every 50 time steps
+        unsigned int input_pulse_interval_ = 100; // Inject new pulse every 100 time steps (0 = disabled)
         
     private:
         // Time stepping state

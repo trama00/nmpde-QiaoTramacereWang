@@ -218,9 +218,8 @@ namespace WaveEquation
         public:
             PulseDisplacementFunction(const ProblemBase<2> *prob) : dealii::Function<2>(), problem(prob) {}
             
-            virtual double value(const dealii::Point<2> &p, const unsigned int component = 0) const override
+            virtual double value(const dealii::Point<2> &p, const unsigned int /*component*/) const override
             {
-                (void)component;
                 return problem->initial_displacement(p);
             }
             
@@ -349,9 +348,8 @@ namespace WaveEquation
         public:
             InitialDisplacementFunction(const ProblemBase<2> *prob) : dealii::Function<2>(), problem(prob) {}
             
-            virtual double value(const dealii::Point<2> &p, const unsigned int component = 0) const override
+            virtual double value(const dealii::Point<2> &p, const unsigned int /*component*/) const override
             {
-                (void)component;
                 return problem->initial_displacement(p);
             }
             
@@ -365,9 +363,8 @@ namespace WaveEquation
         public:
             InitialVelocityFunction(const ProblemBase<2> *prob) : dealii::Function<2>(), problem(prob) {}
             
-            virtual double value(const dealii::Point<2> &p, const unsigned int component = 0) const override
+            virtual double value(const dealii::Point<2> &p, const unsigned int /*component*/) const override
             {
-                (void)component;
                 return problem->initial_velocity(p);
             }
             
@@ -393,10 +390,8 @@ namespace WaveEquation
         old_solution_v_ = solution_v_;
     }
 
-    void CGWaveSolver2D::solve_time_step(double time)
+    void CGWaveSolver2D::solve_time_step(double /*time*/)
     {
-        (void)time; // Suppress unused parameter warning
-        
         // Same theta scheme as 1D solver
         const double dt = time_step_;
         const double theta = 0.5;  // Crank-Nicolson

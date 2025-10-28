@@ -26,23 +26,18 @@ public:
         return std::exp(-r2 / (2.0 * sigma * sigma));
     }
     
-    double initial_velocity(const dealii::Point<2> &p) const override
+    double initial_velocity(const dealii::Point<2> &/*p*/) const override
     {
-        (void)p;
         return 0.0;
     }
     
-    double source_term(const dealii::Point<2> &p, double t) const override
+    double source_term(const dealii::Point<2> &/*p*/, double /*t*/) const override
     {
-        (void)p;
-        (void)t;
         return 0.0;
     }
     
-    double boundary_value(const dealii::Point<2> &p, double t) const override
+    double boundary_value(const dealii::Point<2> &/*p*/, double /*t*/) const override
     {
-        (void)p;
-        (void)t;
         return 0.0;  // Homogeneous Neumann boundary conditions
     }
 };

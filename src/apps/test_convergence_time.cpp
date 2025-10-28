@@ -1,9 +1,6 @@
 #include "CGWaveSolver.hpp"
+#include "ErrorComputer.hpp"
 #include "ProblemBase.hpp"
-
-#include <deal.II/base/quadrature_lib.h>
-
-#include <deal.II/fe/fe_values.h>
 
 #include <cmath>
 #include <iomanip>
@@ -23,48 +20,6 @@
  * For Crank-Nicolson (theta=0.5), we expect O(dt^2) convergence (second-order).
  * For implicit Euler (theta=1.0), we expect O(dt) convergence (first-order).
  */
-
-// Helper class to compute errors
-template <int dim>
-class ErrorComputer
-{
-public:
-    static double compute_l2_error(
-        const dealii::DoFHandler<dim> &dof_handler,
-        const dealii::Vector<double> &numerical_solution,
-        const WaveEquation::ManufacturedSolution<dim> &exact_problem,
-        double time)
-    {
-        dealii::QGauss<dim> quadrature(3);  // Use 3-point Gauss quadrature
-        dealii::FEValues<dim> fe_values(dof_handler.get_fe(),
-                                       quadrature,
-                                       dealii::update_values |
-                                       dealii::update_quadrature_points |
-                                       dealii::update_JxW_values);
-        
-        const unsigned int n_q_points = quadrature.size();
-        std::vector<double> numerical_values(n_q_points);
-        
-        double l2_error_squared = 0.0;
-        
-        for (const auto &cell : dof_handler.active_cell_iterators())
-        {
-            fe_values.reinit(cell);
-            fe_values.get_function_values(numerical_solution, numerical_values);
-            
-            for (unsigned int q = 0; q < n_q_points; ++q)
-            {
-                const dealii::Point<dim> &q_point = fe_values.quadrature_point(q);
-                const double exact_value = exact_problem.exact_solution(q_point, time);
-                const double error = numerical_values[q] - exact_value;
-                
-                l2_error_squared += error * error * fe_values.JxW(q);
-            }
-        }
-        
-        return std::sqrt(l2_error_squared);
-    }
-};
 
 int main()
 {
@@ -145,7 +100,7 @@ int main()
             const unsigned int actual_steps = static_cast<unsigned int>(std::ceil(final_time / dt));
             const double actual_final_time = actual_steps * dt;
             
-            const double l2_error = ErrorComputer<1>::compute_l2_error(
+            const double l2_error = WaveEquation::Utilities::ErrorComputer<1>::compute_l2_error(
                 solver.get_dof_handler(),
                 solver.get_solution_u(),
                 *problem_ptr,

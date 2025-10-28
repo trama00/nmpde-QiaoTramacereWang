@@ -1,8 +1,7 @@
 #include "CGWaveSolver2D.hpp"
+#include "ErrorComputer.hpp"
 #include "../core/Problems/ManufacturedSolution2D.cpp"
-#include <deal.II/base/quadrature_lib.h>
-#include <deal.II/fe/fe_values.h>
-#include <deal.II/fe/mapping_fe.h>
+
 #include <cmath>
 #include <iomanip>
 #include <iostream>
@@ -20,50 +19,6 @@ using namespace WaveEquation;
  * For FE with degree p, we expect O(h^{p+1}) convergence in L2 norm.
  * With linear elements (p=1), we should see second-order convergence: O(h^2)
  */
-
-// Helper class to compute errors for 2D simplex elements
-class ErrorComputer2D
-{
-public:
-    static double compute_l2_error(
-        const dealii::DoFHandler<2> &dof_handler,
-        const dealii::FiniteElement<2> &fe,
-        const dealii::Vector<double> &numerical_solution,
-        const ManufacturedSolution2D<2> &exact_problem,
-        double time)
-    {
-        dealii::QGaussSimplex<2> quadrature(3);  // Use 3-point Gauss quadrature for triangles
-        dealii::MappingFE<2> mapping(fe);  // Proper mapping for simplex elements
-        dealii::FEValues<2> fe_values(mapping,
-                                     fe,
-                                     quadrature,
-                                     dealii::update_values |
-                                     dealii::update_quadrature_points |
-                                     dealii::update_JxW_values);
-        
-        const unsigned int n_q_points = quadrature.size();
-        std::vector<double> numerical_values(n_q_points);
-        
-        double l2_error_squared = 0.0;
-        
-        for (const auto &cell : dof_handler.active_cell_iterators())
-        {
-            fe_values.reinit(cell);
-            fe_values.get_function_values(numerical_solution, numerical_values);
-            
-            for (unsigned int q = 0; q < n_q_points; ++q)
-            {
-                const dealii::Point<2> &q_point = fe_values.quadrature_point(q);
-                const double exact_value = exact_problem.exact_solution(q_point, time);
-                const double error = numerical_values[q] - exact_value;
-                
-                l2_error_squared += error * error * fe_values.JxW(q);
-            }
-        }
-        
-        return std::sqrt(l2_error_squared);
-    }
-};
 
 int main(int argc, char *argv[])
 {
@@ -147,7 +102,7 @@ int main(int argc, char *argv[])
             
             // Compute error at final time
             ManufacturedSolution2D<2> exact_solution(wave_speed);
-            const double l2_error = ErrorComputer2D::compute_l2_error(
+            const double l2_error = Utilities::ErrorComputer<2>::compute_l2_error(
                 solver.get_dof_handler(),
                 solver.get_fe(),
                 solver.get_solution_u(),
