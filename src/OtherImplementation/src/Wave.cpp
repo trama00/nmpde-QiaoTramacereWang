@@ -1,7 +1,6 @@
 #include "Wave.hpp"
 
-void
-Wave::setup()
+void Wave::setup()
 {
   // Create the mesh.
   {
@@ -17,7 +16,7 @@ Wave::setup()
 
     GridTools::partition_triangulation(mpi_size, mesh_serial);
     const auto construction_data = TriangulationDescription::Utilities::
-      create_description_from_triangulation(mesh_serial, MPI_COMM_WORLD);
+        create_description_from_triangulation(mesh_serial, MPI_COMM_WORLD);
     mesh.create_triangulation(construction_data);
 
     pcout << "  Number of elements = " << mesh.n_global_active_cells()
@@ -87,62 +86,61 @@ Wave::setup()
   }
 }
 
-void
-Wave::assemble_matrices()
+void Wave::assemble_matrices()
 {
   pcout << "===============================================" << std::endl;
   pcout << "Assembling the system matrices" << std::endl;
 
   const unsigned int dofs_per_cell = fe->dofs_per_cell;
-  const unsigned int n_q           = quadrature->size();
+  const unsigned int n_q = quadrature->size();
 
   FEValues<dim> fe_values(*fe,
                           *quadrature,
                           update_values | update_gradients |
-                            update_quadrature_points | update_JxW_values);
+                              update_quadrature_points | update_JxW_values);
 
   FullMatrix<double> cell_mass_matrix(dofs_per_cell, dofs_per_cell);
   FullMatrix<double> cell_stiffness_matrix(dofs_per_cell, dofs_per_cell);
 
   std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
 
-  mass_matrix      = 0.0;
+  mass_matrix = 0.0;
   stiffness_matrix = 0.0;
 
   for (const auto &cell : dof_handler.active_cell_iterators())
+  {
+    if (!cell->is_locally_owned())
+      continue;
+
+    fe_values.reinit(cell);
+
+    cell_mass_matrix = 0.0;
+    cell_stiffness_matrix = 0.0;
+
+    for (unsigned int q = 0; q < n_q; ++q)
     {
-      if (!cell->is_locally_owned())
-        continue;
+      // Evaluate coefficients on this quadrature node.
+      const double mu_loc = mu.value(fe_values.quadrature_point(q));
 
-      fe_values.reinit(cell);
-
-      cell_mass_matrix      = 0.0;
-      cell_stiffness_matrix = 0.0;
-
-      for (unsigned int q = 0; q < n_q; ++q)
+      for (unsigned int i = 0; i < dofs_per_cell; ++i)
+      {
+        for (unsigned int j = 0; j < dofs_per_cell; ++j)
         {
-          // Evaluate coefficients on this quadrature node.
-          const double mu_loc = mu.value(fe_values.quadrature_point(q));
+          cell_mass_matrix(i, j) += fe_values.shape_value(i, q) *
+                                    fe_values.shape_value(j, q) * fe_values.JxW(q);
 
-          for (unsigned int i = 0; i < dofs_per_cell; ++i)
-            {
-              for (unsigned int j = 0; j < dofs_per_cell; ++j)
-                {
-                  cell_mass_matrix(i, j) += fe_values.shape_value(i, q) *
-                                            fe_values.shape_value(j, q) * fe_values.JxW(q);
-
-                  cell_stiffness_matrix(i, j) +=
-                    mu_loc * fe_values.shape_grad(i, q) *
-                    fe_values.shape_grad(j, q) * fe_values.JxW(q);
-                }
-            }
+          cell_stiffness_matrix(i, j) +=
+              mu_loc * fe_values.shape_grad(i, q) *
+              fe_values.shape_grad(j, q) * fe_values.JxW(q);
         }
-
-      cell->get_dof_indices(dof_indices);
-
-      mass_matrix.add(dof_indices, cell_mass_matrix);
-      stiffness_matrix.add(dof_indices, cell_stiffness_matrix);
+      }
     }
+
+    cell->get_dof_indices(dof_indices);
+
+    mass_matrix.add(dof_indices, cell_mass_matrix);
+    stiffness_matrix.add(dof_indices, cell_stiffness_matrix);
+  }
 
   mass_matrix.compress(VectorOperation::add);
   stiffness_matrix.compress(VectorOperation::add);
@@ -150,25 +148,23 @@ Wave::assemble_matrices()
   // We build the matrix on the left-hand side of the algebraic problem (the one
   // that we'll invert at each timestep).
   lhs_matrix.copy_from(mass_matrix);
-  lhs_matrix.add(theta*theta*deltat*deltat, stiffness_matrix);
+  lhs_matrix.add(theta * theta * deltat * deltat, stiffness_matrix);
 
   // We build the matrix on the right-hand side (the one that multiplies the old
   // solution un in place to leverage memory using).
   rhs_matrix.copy_from(mass_matrix);
-  rhs_matrix.add(-(1.0 - theta)*theta*deltat*deltat, stiffness_matrix);
-
+  rhs_matrix.add(-(1.0 - theta) * theta * deltat * deltat, stiffness_matrix);
 }
 
-void
-Wave::assemble_rhs(const double &time)
+void Wave::assemble_rhs(const double &time)
 {
   const unsigned int dofs_per_cell = fe->dofs_per_cell;
-  const unsigned int n_q           = quadrature->size();
+  const unsigned int n_q = quadrature->size();
 
   FEValues<dim> fe_values(*fe,
                           *quadrature,
                           update_values | update_quadrature_points |
-                            update_JxW_values);
+                              update_JxW_values);
 
   Vector<double> cell_rhs(dofs_per_cell);
 
@@ -177,41 +173,41 @@ Wave::assemble_rhs(const double &time)
   system_rhs = 0.0;
 
   for (const auto &cell : dof_handler.active_cell_iterators())
+  {
+    if (!cell->is_locally_owned())
+      continue;
+
+    fe_values.reinit(cell);
+
+    cell_rhs = 0.0;
+
+    for (unsigned int q = 0; q < n_q; ++q)
     {
-      if (!cell->is_locally_owned())
-        continue;
+      // We need to compute the forcing term at the current time (tn+1) and
+      // at the old time (tn). deal.II Functions can be computed at a
+      // specific time by calling their set_time method.
 
-      fe_values.reinit(cell);
+      // Compute f(tn+1)
+      forcing_term.set_time(time);
+      const double f_new_loc =
+          forcing_term.value(fe_values.quadrature_point(q));
 
-      cell_rhs = 0.0;
+      // Compute f(tn)
+      forcing_term.set_time(time - deltat);
+      const double f_old_loc =
+          forcing_term.value(fe_values.quadrature_point(q));
 
-      for (unsigned int q = 0; q < n_q; ++q)
-        {
-          // We need to compute the forcing term at the current time (tn+1) and
-          // at the old time (tn). deal.II Functions can be computed at a
-          // specific time by calling their set_time method.
-
-          // Compute f(tn+1)
-          forcing_term.set_time(time);
-          const double f_new_loc =
-            forcing_term.value(fe_values.quadrature_point(q));
-
-          // Compute f(tn)
-          forcing_term.set_time(time - deltat);
-          const double f_old_loc =
-            forcing_term.value(fe_values.quadrature_point(q));
-
-          for (unsigned int i = 0; i < dofs_per_cell; ++i)
-            {
-              cell_rhs(i) += (theta * theta * deltat * deltat * f_new_loc + 
-                             (1.0 - theta) * theta * deltat * deltat * f_old_loc) *
-                             fe_values.shape_value(i, q) * fe_values.JxW(q);
-            }
-        }
-
-      cell->get_dof_indices(dof_indices);
-      system_rhs.add(dof_indices, cell_rhs);
+      for (unsigned int i = 0; i < dofs_per_cell; ++i)
+      {
+        cell_rhs(i) += (theta * theta * deltat * deltat * f_new_loc +
+                        (1.0 - theta) * theta * deltat * deltat * f_old_loc) *
+                       fe_values.shape_value(i, q) * fe_values.JxW(q);
+      }
     }
+
+    cell->get_dof_indices(dof_indices);
+    system_rhs.add(dof_indices, cell_rhs);
+  }
 
   system_rhs.compress(VectorOperation::add);
 
@@ -220,9 +216,9 @@ Wave::assemble_rhs(const double &time)
   rhs_matrix.vmult_add(system_rhs, solution_owned);
   // Add the contribution from the mass matrix times the derivative to the RHS.
   {
-  TrilinosWrappers::MPI::Vector tmp(derivative_owned);
-  tmp *= deltat;                             
-  mass_matrix.vmult_add(system_rhs, tmp);
+    TrilinosWrappers::MPI::Vector tmp(derivative_owned);
+    tmp *= deltat;
+    mass_matrix.vmult_add(system_rhs, tmp);
   }
 
   // Boundary conditions.
@@ -249,23 +245,21 @@ Wave::assemble_rhs(const double &time)
     // conditions. This replaces the equations for the boundary DoFs with
     // the corresponding u_i = 0 equations.
     MatrixTools::apply_boundary_values(
-      boundary_values, lhs_matrix, solution_owned, system_rhs, true);
+        boundary_values, lhs_matrix, solution_owned, system_rhs, true);
   }
 
   pcout << "  ||u^n|| = " << solution_owned.l2_norm()
-      << ", ||v^n|| = " << derivative_owned.l2_norm() << std::endl;
-
+        << ", ||v^n|| = " << derivative_owned.l2_norm() << std::endl;
 }
 
-void 
-Wave::solve_time_step(const TrilinosWrappers::MPI::Vector &u_old,
+void Wave::solve_time_step(const TrilinosWrappers::MPI::Vector &u_old,
                            const TrilinosWrappers::MPI::Vector &v_old)
 {
   SolverControl solver_control(1000, 1e-6 * system_rhs.l2_norm());
   SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
-  TrilinosWrappers::PreconditionSSOR      preconditioner;
+  TrilinosWrappers::PreconditionSSOR preconditioner;
   preconditioner.initialize(lhs_matrix,
-    TrilinosWrappers::PreconditionSSOR::AdditionalData(1.0));
+                            TrilinosWrappers::PreconditionSSOR::AdditionalData(1.0));
 
   // solve for u^{n+1}
   solver.solve(lhs_matrix, solution_owned, system_rhs, preconditioner);
@@ -277,12 +271,12 @@ Wave::solve_time_step(const TrilinosWrappers::MPI::Vector &u_old,
   //
   // v^{n+1} = ((theta-1)/theta) v^n + (1/(theta*k)) (u^{n+1} - u^n)
   //
-  derivative_owned = v_old;               // start from v^n
-  derivative_owned *= (theta - 1.0)/theta;
+  derivative_owned = v_old; // start from v^n
+  derivative_owned *= (theta - 1.0) / theta;
 
   TrilinosWrappers::MPI::Vector diff(solution_owned);
-  diff.add(-1.0, u_old);                  // diff = u^{n+1} - u^n
-  diff *= 1.0/(theta * deltat);
+  diff.add(-1.0, u_old); // diff = u^{n+1} - u^n
+  diff *= 1.0 / (theta * deltat);
 
   derivative_owned += diff;
   derivative = derivative_owned;
@@ -291,12 +285,12 @@ Wave::solve_time_step(const TrilinosWrappers::MPI::Vector &u_old,
 void Wave::compute_cell_energy(Vector<double> &cell_energy) const
 {
   const unsigned int dofs_per_cell = fe->dofs_per_cell;
-  const unsigned int n_q           = quadrature->size();
+  const unsigned int n_q = quadrature->size();
 
   FEValues<dim> fe_values(*fe,
                           *quadrature,
                           update_values | update_gradients |
-                            update_JxW_values);
+                              update_JxW_values);
 
   std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
   Vector<double> u_loc(dofs_per_cell);
@@ -306,47 +300,47 @@ void Wave::compute_cell_energy(Vector<double> &cell_energy) const
 
   unsigned int cell_index = 0;
   for (const auto &cell : dof_handler.active_cell_iterators())
+  {
+    fe_values.reinit(cell);
+    cell->get_dof_indices(dof_indices);
+
+    // gather local dof values of u and v
+    for (unsigned int i = 0; i < dofs_per_cell; ++i)
     {
-      fe_values.reinit(cell);
-      cell->get_dof_indices(dof_indices);
-
-      // gather local dof values of u and v
-      for (unsigned int i = 0; i < dofs_per_cell; ++i)
-        {
-          u_loc[i] = solution[dof_indices[i]];
-          v_loc[i] = derivative[dof_indices[i]];
-        }
-
-      double E_cell = 0.0;
-      double vol    = 0.0;
-
-      for (unsigned int q = 0; q < n_q; ++q)
-        {
-          double u_q = 0.0;
-          double v_q = 0.0;
-          Tensor<1, dim> grad_u_q;
-
-          for (unsigned int i = 0; i < dofs_per_cell; ++i)
-            {
-              const double phi_i      = fe_values.shape_value(i, q);
-              const Tensor<1, dim> grad_phi_i = fe_values.shape_grad(i, q);
-
-              u_q      += u_loc[i] * phi_i;
-              v_q      += v_loc[i] * phi_i;
-              grad_u_q += u_loc[i] * grad_phi_i;
-            }
-
-          const double density_q =
-            0.5 * (v_q * v_q + grad_u_q.norm_square());
-
-          const double JxW = fe_values.JxW(q);
-          E_cell += density_q * JxW; // integral over cell
-          vol    += JxW;
-        }
-
-      // store *average* energy density on this cell
-      cell_energy[cell_index++] = E_cell / vol;
+      u_loc[i] = solution[dof_indices[i]];
+      v_loc[i] = derivative[dof_indices[i]];
     }
+
+    double E_cell = 0.0;
+    double vol = 0.0;
+
+    for (unsigned int q = 0; q < n_q; ++q)
+    {
+      double u_q = 0.0;
+      double v_q = 0.0;
+      Tensor<1, dim> grad_u_q;
+
+      for (unsigned int i = 0; i < dofs_per_cell; ++i)
+      {
+        const double phi_i = fe_values.shape_value(i, q);
+        const Tensor<1, dim> grad_phi_i = fe_values.shape_grad(i, q);
+
+        u_q += u_loc[i] * phi_i;
+        v_q += v_loc[i] * phi_i;
+        grad_u_q += u_loc[i] * grad_phi_i;
+      }
+
+      const double density_q =
+          0.5 * (v_q * v_q + grad_u_q.norm_square());
+
+      const double JxW = fe_values.JxW(q);
+      E_cell += density_q * JxW; // integral over cell
+      vol += JxW;
+    }
+
+    // store *average* energy density on this cell
+    cell_energy[cell_index++] = E_cell / vol;
+  }
 }
 
 void Wave::output(const unsigned int &time_step) const
@@ -371,12 +365,10 @@ void Wave::output(const unsigned int &time_step) const
   data_out.build_patches();
 
   data_out.write_vtu_with_pvtu_record(
-    "./", "output", time_step, MPI_COMM_WORLD, 3);
+      "./", "output", time_step, MPI_COMM_WORLD, 3);
 }
 
-
-void
-Wave::solve()
+void Wave::solve()
 {
   assemble_matrices();
 
@@ -392,7 +384,7 @@ Wave::solve()
     derivative = derivative_owned;
 
     // Output the initial solution.
-    output(0);// write the initial condition value to file at time step 0
+    output(0); // write the initial condition value to file at time step 0
     pcout << "-----------------------------------------------" << std::endl;
   }
 
@@ -400,25 +392,25 @@ Wave::solve()
   TrilinosWrappers::MPI::Vector v_old(derivative_owned);
 
   unsigned int time_step = 0;
-  double       time      = 0;
+  double time = 0;
 
   while (time < T)
-    {
-      time += deltat;
-      ++time_step;
+  {
+    time += deltat;
+    ++time_step;
 
-      pcout << "n = " << std::setw(3) << time_step << ", t = " << std::setw(5)
-            << time << ":" << std::flush;
+    pcout << "n = " << std::setw(3) << time_step << ", t = " << std::setw(5)
+          << time << ":" << std::flush;
 
-      // use u_old, v_old when assembling RHS for u^{n+1}
-      assemble_rhs(time);
+    // use u_old, v_old when assembling RHS for u^{n+1}
+    assemble_rhs(time);
 
-      solve_time_step(u_old, v_old); // pass them in
+    solve_time_step(u_old, v_old); // pass them in
 
-      output(time_step);
+    output(time_step);
 
-      // shift current to old for next loop
-      u_old = solution_owned;
-      v_old = derivative_owned;
-    }
+    // shift current to old for next loop
+    u_old = solution_owned;
+    v_old = derivative_owned;
+  }
 }

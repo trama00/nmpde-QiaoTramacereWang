@@ -70,8 +70,8 @@ public:
           const unsigned int /*component*/ = 0) const override
     {
       return std::sin(numbers::PI * p[0]) *
-           std::sin(numbers::PI * p[1]) *
-           std::sin(numbers::PI * p[2]);
+             std::sin(numbers::PI * p[1]) *
+             std::sin(numbers::PI * p[2]) ;
     }
   };
 
@@ -87,13 +87,14 @@ public:
     }
   };
 
-    // Dirichlet boundary conditions.
+  // Dirichlet boundary conditions.
   class FunctionG : public Function<dim>
   {
   public:
     // Constructor.
     FunctionG()
-    {}
+    {
+    }
 
     // Evaluation.
     virtual double
@@ -106,21 +107,14 @@ public:
 
   // Constructor. We provide the final time, time step Delta t and theta method
   // parameter as constructor arguments.
-  Wave(const std::string  &mesh_file_name_,
+  Wave(const std::string &mesh_file_name_,
        const unsigned int &r_,
-       const double       &T_,
-       const double       &deltat_,
-       const double       &theta_)
-    : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
-    , mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD))
-    , pcout(std::cout, mpi_rank == 0)
-    , T(T_)
-    , mesh_file_name(mesh_file_name_)
-    , r(r_)
-    , deltat(deltat_)
-    , theta(theta_)
-    , mesh(MPI_COMM_WORLD)
-  {}
+       const double &T_,
+       const double &deltat_,
+       const double &theta_)
+      : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)), mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)), pcout(std::cout, mpi_rank == 0), T(T_), mesh_file_name(mesh_file_name_), r(r_), deltat(deltat_), theta(theta_), mesh(MPI_COMM_WORLD)
+  {
+  }
 
   // Initialization.
   void
@@ -147,7 +141,7 @@ protected:
   void
   output(const unsigned int &time_step) const;
 
-  void 
+  void
   compute_cell_energy(Vector<double> &cell_energy) const;
 
   // MPI parallel. /////////////////////////////////////////////////////////////
@@ -177,7 +171,6 @@ protected:
 
   // g(x).
   FunctionG function_g;
-
 
   // Final time.
   const double T;
@@ -238,7 +231,7 @@ protected:
   // System solution derivative (including ghost elements).
   TrilinosWrappers::MPI::Vector derivative;
 
-   // System solution derivative local (owned elements).
+  // System solution derivative local (owned elements).
   TrilinosWrappers::MPI::Vector derivative_owned;
 };
 
