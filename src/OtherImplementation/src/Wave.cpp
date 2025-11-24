@@ -267,11 +267,11 @@ void Wave::solve_time_step(const TrilinosWrappers::MPI::Vector &u_old,
 
   solution = solution_owned;
 
-  // now update v^{n+1} using the clean formula:
+  // now update w^{n+1} using the clean formula:
   //
-  // v^{n+1} = ((theta-1)/theta) v^n + (1/(theta*k)) (u^{n+1} - u^n)
+  // w^{n+1} = ((theta-1)/theta) w^n + (1/(theta*deltat)) (u^{n+1} - u^n)
   //
-  derivative_owned = v_old; // start from v^n
+  derivative_owned = v_old; // start from w^n
   derivative_owned *= (theta - 1.0) / theta;
 
   TrilinosWrappers::MPI::Vector diff(solution_owned);
@@ -304,7 +304,7 @@ void Wave::compute_cell_energy(Vector<double> &cell_energy) const
     fe_values.reinit(cell);
     cell->get_dof_indices(dof_indices);
 
-    // gather local dof values of u and v
+    // gather local dof values of u and w
     for (unsigned int i = 0; i < dofs_per_cell; ++i)
     {
       u_loc[i] = solution[dof_indices[i]];
