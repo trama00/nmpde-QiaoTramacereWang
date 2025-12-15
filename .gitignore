@@ -46,3 +46,6 @@ visualize.sh
 
 # meshes
 *.msh
+
+# github
+.github/
