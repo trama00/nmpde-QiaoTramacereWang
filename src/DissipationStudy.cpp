@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
     // Defaults (override via CLI):
     // DissipationStudy [mesh] [degree] [T] [stride]
-    std::string mesh_file = "../mesh/mesh-square-64.msh";
+    std::string mesh_file = "../meshes/mesh-square-64.msh";
     unsigned int degree = 1;
     double T = 10.0;
     unsigned int stride = 10;

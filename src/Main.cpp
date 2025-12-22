@@ -5,7 +5,7 @@ int main(int argc, char *argv[])
 {
   Utilities::MPI::MPI_InitFinalize mpi_init(argc, argv);
 
-  const std::string  mesh_file_name = "../mesh/mesh-square-40.msh";
+  const std::string  mesh_file_name = "../meshes/mesh-square-40.msh";
   const unsigned int degree         = 1;
 
   const double T      = 1.0;

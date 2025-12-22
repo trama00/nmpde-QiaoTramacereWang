@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
   //   SpaceConvergence <mesh_dir> <prefix> <degree> <T> <theta> <dt> <N1> <N2> ...
   //
   // Example:
-  //   mpirun -np 4 ./SpaceConvergence ../mesh mesh-square 1 1.0 0.5 0.001 20 40 80 160
+  //   mpirun -np 4 ./SpaceConvergence ../meshes mesh-square 1 1.0 0.5 0.001 20 40 80 160
   //
   if (argc < 8)
   {
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
       std::cerr << "Usage:\n"
                 << "  SpaceConvergence <mesh_dir> <prefix> <degree> <T> <theta> <dt> <N1> <N2> ...\n\n"
                 << "Example:\n"
-                << "  mpirun -np 4 ./SpaceConvergence ../mesh mesh-square 1 1.0 0.5 0.001 20 40 80 160\n";
+                << "  mpirun -np 4 ./SpaceConvergence ../meshes mesh-square 1 1.0 0.5 0.001 20 40 80 160\n";
     }
     return 1;
   }
