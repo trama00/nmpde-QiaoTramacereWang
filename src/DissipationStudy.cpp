@@ -98,11 +98,11 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Output layout
-    const std::string base_dir = "../build/results/dissipation";
+    // Output layout (relative to project root, run from build/)
+    const std::string base_dir = "../results/dissipation";
     const std::string energy_dir = base_dir + "/energy";
-    ensure_dir("../build", mpi_rank);
-    ensure_dir("../build/results", mpi_rank);
+    ensure_dir("../results", mpi_rank);
+    ensure_dir(base_dir, mpi_rank);
     ensure_dir(energy_dir, mpi_rank);
 
     if (mpi_rank == 0)

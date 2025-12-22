@@ -35,10 +35,10 @@ add_executable(DissipationStudy
 )
 deal_ii_setup_target(DissipationStudy RELEASE)
 
-# TODO: Dispersion study (to be implemented)
-# add_executable(DispersionStudy
-#   src/DispersionStudy.cpp
-#   src/Wave.cpp
-# )
-# deal_ii_setup_target(DispersionStudy RELEASE)
+# Dispersion study (phase velocity analysis)
+add_executable(DispersionStudy
+  src/DispersionStudy.cpp
+  src/Wave.cpp
+)
+deal_ii_setup_target(DispersionStudy RELEASE)
 

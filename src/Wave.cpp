@@ -36,7 +36,7 @@ Wave::Wave(const std::string &mesh_file_name_,
            const double &T_,
            const double &deltat_,
            const double &theta_)
-    : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)), mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)), pcout(std::cout, mpi_rank == 0), initial_u(1, 1) // default mode (1,1)
+    : mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)), mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)), pcout(std::cout, mpi_rank == 0), initial_u(1, 1), initial_v(1, 1) // default mode (1,1)
       ,
       T(T_), mesh_file_name(mesh_file_name_), degree(degree_), deltat(deltat_), theta(theta_), mesh(MPI_COMM_WORLD)
 {

@@ -90,14 +90,152 @@ public:
   };
 
   // Initial velocity v0(x) = u_t(x,0).
+  // For standing wave: v0 = 0
+  // For traveling wave: v0 = -c * (direction · ∇u0)
   class InitialValuesV : public Function<dim>
   {
   public:
-    double value(const Point<dim> & /*p*/,
+    InitialValuesV(const unsigned int m_ = 1, const unsigned int n_ = 1)
+        : m(m_), n(n_) {}
+
+    void set_mode(const unsigned int m_, const unsigned int n_)
+    {
+      m = m_;
+      n = n_;
+    }
+
+    // Enable traveling wave mode with propagation direction
+    void set_traveling(const bool enabled, const double dir_x_ = 1.0,
+                       const double dir_y_ = 0.0)
+    {
+      traveling = enabled;
+      dir_x = dir_x_;
+      dir_y = dir_y_;
+      // Normalize direction
+      const double norm = std::sqrt(dir_x * dir_x + dir_y * dir_y);
+      if (norm > 1e-14)
+      {
+        dir_x /= norm;
+        dir_y /= norm;
+      }
+    }
+
+    double value(const Point<dim> &p,
                  const unsigned int /*component*/ = 0) const override
     {
-      return 0.0;
+      if (!traveling)
+        return 0.0;
+
+      // For traveling wave: v0 = -c * (n̂ · ∇u0)
+      // u0 = sin(kx*x) * sin(ky*y)
+      // ∂u0/∂x = kx * cos(kx*x) * sin(ky*y)
+      // ∂u0/∂y = ky * sin(kx*x) * cos(ky*y)
+      const double c = 1.0;
+      const double kx = numbers::PI * static_cast<double>(m);
+      const double ky = numbers::PI * static_cast<double>(n);
+
+      const double du_dx = kx * std::cos(kx * p[0]) * std::sin(ky * p[1]);
+      const double du_dy = ky * std::sin(kx * p[0]) * std::cos(ky * p[1]);
+
+      return -c * (dir_x * du_dx + dir_y * du_dy);
     }
+
+  private:
+    unsigned int m = 1;
+    unsigned int n = 1;
+    bool traveling = false;
+    double dir_x = 1.0;
+    double dir_y = 0.0;
+  };
+
+  // Gaussian pulse initial displacement (for dispersion visualization)
+  class GaussianPulseU : public Function<dim>
+  {
+  public:
+    GaussianPulseU(const double x0_ = 0.5, const double y0_ = 0.5,
+                   const double sigma_ = 0.1, const double amplitude_ = 1.0)
+        : x0(x0_), y0(y0_), sigma(sigma_), A(amplitude_) {}
+
+    void set_parameters(const double x0_, const double y0_,
+                        const double sigma_, const double amplitude_ = 1.0)
+    {
+      x0 = x0_;
+      y0 = y0_;
+      sigma = sigma_;
+      A = amplitude_;
+    }
+
+    double value(const Point<dim> &p,
+                 const unsigned int /*component*/ = 0) const override
+    {
+      const double r2 = (p[0] - x0) * (p[0] - x0) + (p[1] - y0) * (p[1] - y0);
+      return A * std::exp(-r2 / (2.0 * sigma * sigma));
+    }
+
+  private:
+    double x0 = 0.5;
+    double y0 = 0.5;
+    double sigma = 0.1;
+    double A = 1.0;
+  };
+
+  // Gaussian pulse initial velocity (for traveling pulse)
+  class GaussianPulseV : public Function<dim>
+  {
+  public:
+    GaussianPulseV(const double x0_ = 0.5, const double y0_ = 0.5,
+                   const double sigma_ = 0.1, const double amplitude_ = 1.0,
+                   const double dir_x_ = 1.0, const double dir_y_ = 0.0)
+        : x0(x0_), y0(y0_), sigma(sigma_), A(amplitude_)
+    {
+      set_direction(dir_x_, dir_y_);
+    }
+
+    void set_parameters(const double x0_, const double y0_,
+                        const double sigma_, const double amplitude_ = 1.0)
+    {
+      x0 = x0_;
+      y0 = y0_;
+      sigma = sigma_;
+      A = amplitude_;
+    }
+
+    void set_direction(const double dir_x_, const double dir_y_)
+    {
+      dir_x = dir_x_;
+      dir_y = dir_y_;
+      const double norm = std::sqrt(dir_x * dir_x + dir_y * dir_y);
+      if (norm > 1e-14)
+      {
+        dir_x /= norm;
+        dir_y /= norm;
+      }
+    }
+
+    double value(const Point<dim> &p,
+                 const unsigned int /*component*/ = 0) const override
+    {
+      // u0 = A * exp(-r²/(2σ²))
+      // ∂u0/∂x = u0 * (-(x-x0)/σ²)
+      // ∂u0/∂y = u0 * (-(y-y0)/σ²)
+      // v0 = -c * (n̂ · ∇u0) for traveling wave
+      const double c = 1.0;
+      const double r2 = (p[0] - x0) * (p[0] - x0) + (p[1] - y0) * (p[1] - y0);
+      const double u0 = A * std::exp(-r2 / (2.0 * sigma * sigma));
+
+      const double du_dx = u0 * (-(p[0] - x0) / (sigma * sigma));
+      const double du_dy = u0 * (-(p[1] - y0) / (sigma * sigma));
+
+      return -c * (dir_x * du_dx + dir_y * du_dy);
+    }
+
+  private:
+    double x0 = 0.5;
+    double y0 = 0.5;
+    double sigma = 0.1;
+    double A = 1.0;
+    double dir_x = 1.0;
+    double dir_y = 0.0;
   };
 
   // Dirichlet boundary data g(x,t) for u.
@@ -181,6 +319,14 @@ public:
     mode_m = m;
     mode_n = n;
     initial_u.set_mode(m, n);
+    initial_v.set_mode(m, n);
+  }
+
+  // Enable traveling wave mode (initial velocity couples with displacement)
+  void set_traveling_wave(const bool enabled, const double dir_x = 1.0,
+                          const double dir_y = 0.0)
+  {
+    initial_v.set_traveling(enabled, dir_x, dir_y);
   }
 
   // Write energy history as CSV (rank 0 only).
