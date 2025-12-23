@@ -1,5 +1,13 @@
 # Commands for compiling and running the code for this project
 
+## Group members
+
+We select the Project 2: Solving the wave equation. We implement both time and space convergence tests, as well as dissipation and dispersion studies for the wave equation solver using the finite element method and the theta method, with a lot adjustable parameters.
+
+- Yanlong Wang
+- Zhaochen Qiao
+- Luca Tramacere
+
 ## Overview of the project structure
 
 The project is organized as follows:
